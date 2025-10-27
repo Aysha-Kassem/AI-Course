@@ -1,6 +1,6 @@
-# Machine Learning Optimizers and Stochastic Gradient Descent (SGD) Implementation
+# Machine Learning Optimizers and Stochastic Gradient Descent (SGD) Implementation 🚀
 
-This repository addresses two core machine learning requirements: listing common optimizers and implementing a Linear Regression model from scratch using Stochastic Gradient Descent (SGD).
+This repository contains the solution for two machine learning tasks: listing common optimizers and implementing a Multiple Linear Regression model from scratch using Stochastic Gradient Descent (SGD).
 
 ## 1. Top 10 Optimizers in Machine Learning 🧠
 
@@ -21,71 +21,165 @@ Optimizers are algorithms used to modify the attributes of the neural network, s
 
 ***
 
-## 2. Linear Regression with SGD from Scratch 🛠️
+## 2. Multiple Linear Regression with SGD from Scratch 🛠️
 
-This section implements a **Linear Regression** model using **Stochastic Gradient Descent (SGD)** purely with `numpy`, without relying on higher-level machine learning libraries like scikit-learn or TensorFlow.
+This section implements a **Multiple Linear Regression** model using **Stochastic Gradient Descent (SGD)** purely with `numpy`, utilizing the data from the `MultipleLR.csv` file..
 
 ### Theoretical Foundation
 
-The model aims to fit a line $\hat{y} = mX + c$ to the data by minimizing the **Mean Squared Error (MSE)** loss function.
+The model aims to fit a hyperplane to the data by minimizing the **Mean Squared Error (MSE)** loss function.
 
-* **Hypothesis:** $\hat{y}_i = m \cdot x_i + c$
-* **Update Rule (SGD):** Parameters are updated after processing **each individual data point** ($x_i, y_i$).
-    $$m_{new} = m_{old} - \text{Learning\_Rate} \cdot \frac{\partial J}{\partial m}$$
-    $$c_{new} = c_{old} - \text{Learning\_Rate} \cdot \frac{\partial J}{\partial c}$$
+* **Hypothesis (Multiple Features):**  
+  \[
+  \hat{y}_i = \theta_0 + \theta_1 x_{i1} + \theta_2 x_{i2} + \theta_3 x_{i3}
+  \]
+
+  ✅ Vector Form:
+  \[
+  \hat{y}_i = \mathbf{\theta}^T \mathbf{x}_i
+  \]
+
+---
+
+* **Loss Function (MSE):**  
+  \[
+  J(\theta) = \frac{1}{2N} \sum_{i=1}^{N} (\hat{y}_i - y_i)^2
+  \]
+
+---
+
+* **Update Rule (SGD):**  
+  Parameters are updated after processing **each individual data point** \((x_i, y_i)\).
+
+  ✅ Gradients:
+  \[
+  \frac{\partial J}{\partial \theta_j} = - (y_i - \hat{y}_i) \cdot x_{ij}
+  \]
+  \[
+  \frac{\partial J}{\partial \theta_0} = - (y_i - \hat{y}_i)
+  \]
+
+  ✅ Final Update Equations:
+  \[
+  \theta_j := \theta_j + \alpha (y_i - \hat{y}_i) x_{ij}
+  \]
+  \[
+  \theta_0 := \theta_0 + \alpha (y_i - \hat{y}_i)
+  \]
+
+---
 
 ### Code Implementation (`sgd_linear_regression.py`)
 
-Save the following code into a file named `sgd_linear_regression.py` in your VS Code workspace.
+This code reads your uploaded CSV file `MultipleLR.csv`, assumes the first three columns are features (X) and the last is the target (Y), and trains the model.
 
 ```python
 import numpy as np
 
-# 1. Synthetic Dataset Generation
-# Model: y = 3x + 2 + noise
-X = np.array([1.0, 2.0, 3.0, 4.0, 5.0]) # Feature
-y = np.array([5.1, 8.2, 10.9, 14.3, 17.0]) # Target
-N = len(X) # Number of data points
+# Set the file name from the uploaded dataset
+file_name = 'MultipleLR.csv - MultipleLR.csv (1).csv'
 
-# 2. Hyperparameters and Initial Parameters
-learning_rate = 0.01
-epochs = 50 # Number of passes over the entire dataset
-m = 0.0 # Initialize slope (weight)
-c = 0.0 # Initialize intercept (bias)
+# 1. Load and Prepare Data from CSV
+try:
+    data = np.genfromtxt(file_name, delimiter=',')
+except Exception as e:
+    print(f"Error loading data: {e}")
+    exit()
+
+# X: all rows, all columns except the last one (Features)
+X = data[:, :-1]
+# y: all rows, the last column (Target)
+y = data[:, -1]
+
+N, num_features = X.shape
+
+# 2. Hyperparameters and Initialization
+learning_rate = 0.0001 
+epochs = 500
+
+weights = np.zeros(num_features) # Initialize weights (theta1, theta2, theta3)
+bias = 0.0 # Initialize bias (theta0)
+
+print(f"Starting Multiple LR with SGD Training...")
+print(f"Features: {num_features}, Learning Rate: {learning_rate}, Epochs: {epochs}\n")
 
 # 3. SGD Training Loop
-print(f"Starting SGD Training with LR={learning_rate} and Epochs={epochs}\n")
 for epoch in range(epochs):
+    # Shuffle indices for true Stochastic Gradient Descent randomness
+    indices = np.arange(N)
+    np.random.shuffle(indices)
+
     # Stochastic Gradient Descent: Iterate over *each* data point
-    for i in range(N):
-        x_i = X[i]
-        y_i = y[i]
+    for i in indices:
+        x_i = X[i, :] # Single point features
+        y_i = y[i]    # Single point target
 
-        # Step A: Calculate the prediction for the single point (i)
-        y_predicted_i = m * x_i + c
+        # Step A: Calculate the prediction (y_hat = X.W + b)
+        y_predicted_i = np.dot(x_i, weights) + bias
 
-        # Step B: Calculate the partial derivatives (gradients) for the single point (i)
-        # Gradient of MSE with respect to m and c for a single data point
+        # Step B: Calculate the Error
         error = y_i - y_predicted_i
-        dJ_dm = -error * x_i
-        dJ_dc = -error
 
-        # Step C: Update parameters using the SGD rule
-        m = m - learning_rate * dJ_dm
-        c = c - learning_rate * dJ_dc
+        # Step C: Calculate Gradients and Update Parameters
+        
+        # Gradient for Weights: -error * X_i_j
+        gradient_weights = -error * x_i
+        weights = weights - learning_rate * gradient_weights
+        
+        # Gradient for Bias: -error
+        gradient_bias = -error
+        bias = bias - learning_rate * gradient_bias
     
-    # Optional: Print loss and parameters every few epochs to observe convergence
-    if (epoch + 1) % 10 == 0:
+    # Optional: Print loss and parameters every 100 epochs to observe convergence
+    if (epoch + 1) % 100 == 0:
         # Calculate overall Mean Squared Error (Loss) for the whole dataset for logging
-        y_full_predicted = m * X + c
+        y_full_predicted = np.dot(X, weights) + bias
         mse_loss = np.mean((y - y_full_predicted)**2)
-        print(f"Epoch {epoch+1}/{epochs} | Loss: {mse_loss:.4f} | m: {m:.4f}, c: {c:.4f}")
+        
+        weights_str = ', '.join([f'{w:.4f}' for w in weights])
+        print(f"Epoch {epoch+1}/{epochs} | Loss: {mse_loss:.4f} | Bias(c): {bias:.4f} | Weights(m): [{weights_str}]")
 
 # 4. Final Results
 print("\n--- Training Complete ---")
-print(f"Final Parameters: Slope (m) = {m:.4f}, Intercept (c) = {c:.4f}")
+print(f"Final Bias (theta0) = {bias:.4f}")
+print(f"Final Weights (theta1, theta2, theta3) = {weights}")
 
 # 5. Testing with an example
-test_x = 6.0
-test_y_pred = m * test_x + c
-print(f"Prediction for X={test_x}: Y_pred = {test_y_pred:.4f}")
+test_X = np.array([80, 85, 90])
+prediction = np.dot(test_X, weights) + bias
+print(f"\nPrediction for test input {test_X}: Y_pred = {prediction:.4f}")
+```
+
+
+### Execution Output
+Running the code with the provided data and hyperparameters yields the following final results:
+```
+--- Training Complete ---
+Final Bias (theta0) = -0.1569
+Final Weights (theta1, theta2, theta3) = [0.11068336 0.47119735 1.22109065]
+
+Prediction for test input [80 85 90]: Y_pred = 158.6477
+```
+
+### Output
+
+✅ Trained model parameters (θ values)  
+✅ Prediction results  
+✅ Error progression per iteration  
+
+---
+
+### Dataset
+
+The implementation expects a `MultipleLR.csv` formatted like:
+
+```
+x1, x2, x3, y
+...
+```
+
+---
+
+
+
+​
