@@ -1,48 +1,76 @@
 import numpy as np
 
-# 1. Synthetic Dataset (X: feature, y: target)
-X = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
-y = np.array([5.1, 8.2, 10.9, 14.3, 17.0])
-N = len(X) # Number of data points
+# 1. Load and Prepare Data from CSV
+# The file 'MultipleLR.csv' is assumed to be accessible.
+try:
+    data = np.genfromtxt('MultipleLR.csv', delimiter=',')
+except FileNotFoundError:
+    print("Error: 'MultipleLR.csv' not found. Please ensure the file is in the correct directory.")
+    exit()
 
-# 2. Hyperparameters and Initial Parameters
-learning_rate = 0.01
-epochs = 50 # Number of passes over the entire dataset
-m = 0.0 # Initialize slope (weight)
-c = 0.0 # Initialize intercept (bias)
+# Separate features (X) and target (y)
+# X: all rows, all columns except the last one (Features: X1, X2, X3)
+X = data[:, :-1]
+# y: all rows, the last column (Target: Y)
+y = data[:, -1]
+
+N, num_features = X.shape # N: number of data points, num_features: 3
+
+# 2. Hyperparameters and Initialization
+# Lower learning rate is necessary due to the magnitude of the feature values
+learning_rate = 0.0001
+epochs = 500
+
+# Initialize weights (theta1, theta2, theta3) and bias (theta0) to zero
+weights = np.zeros(num_features)
+bias = 0.0
+
+print(f"Starting Multiple LR with SGD Training...")
+print(f"Features: {num_features}, Learning Rate: {learning_rate}, Epochs: {epochs}\n")
 
 # 3. SGD Training Loop
-print(f"Starting SGD Training with LR={learning_rate} and Epochs={epochs}\n")
 for epoch in range(epochs):
-    # Stochastic Gradient Descent: Iterate over *each* data point
-    for i in range(N):
-        x_i = X[i]
-        y_i = y[i]
+    # Shuffle indices for true Stochastic Gradient Descent randomness
+    indices = np.arange(N)
+    np.random.shuffle(indices)
 
-        # Step A: Calculate the prediction for the single point (i)
-        y_predicted_i = m * x_i + c
+    # Inner Loop: Iterate through each data point
+    for i in indices:
+        x_i = X[i, :] # Features for a single point
+        y_i = y[i]    # Target for a single point
 
-        # Step B: Calculate the partial derivatives (gradients) for the single point (i)
+        # Step A: Calculate the prediction (Hypothesis: y_hat = X.W + b)
+        y_predicted_i = np.dot(x_i, weights) + bias
+
+        # Step B: Calculate the Error
         error = y_i - y_predicted_i
-        dJ_dm = -error * x_i
-        dJ_dc = -error
 
-        # Step C: Update parameters using the SGD rule
-        m = m - learning_rate * dJ_dm
-        c = c - learning_rate * dJ_dc
+        # Step C: Calculate Gradients (for a single data point) and Update Parameters
+        
+        # Gradient for Weights (theta_j): -error * X_i_j
+        gradient_weights = -error * x_i
+        weights = weights - learning_rate * gradient_weights
+        
+        # Gradient for Bias (theta0): -error
+        gradient_bias = -error
+        bias = bias - learning_rate * gradient_bias
     
-    # Optional: Print loss and parameters every few epochs
-    if (epoch + 1) % 10 == 0:
-        # Calculate overall Mean Squared Error (Loss) for the whole dataset
-        y_full_predicted = m * X + c
+    # Optional: Log Loss and parameters every 100 epochs
+    if (epoch + 1) % 100 == 0:
+        # Calculate overall Mean Squared Error (MSE) Loss for the whole dataset for logging
+        y_full_predicted = np.dot(X, weights) + bias
         mse_loss = np.mean((y - y_full_predicted)**2)
-        print(f"Epoch {epoch+1}/{epochs} | Loss: {mse_loss:.4f} | m: {m:.4f}, c: {c:.4f}")
+        
+        weights_str = ', '.join([f'{w:.4f}' for w in weights])
+        print(f"Epoch {epoch+1}/{epochs} | Loss: {mse_loss:.4f} | Bias(c): {bias:.4f} | Weights(m): [{weights_str}]")
 
 # 4. Final Results
 print("\n--- Training Complete ---")
-print(f"Final Parameters: Slope (m) = {m:.4f}, Intercept (c) = {c:.4f}")
+print(f"Final Bias (theta0) = {bias:.4f}")
+print(f"Final Weights (theta1, theta2, theta3) = {weights}")
 
-# 5. Testing with an example
-test_x = 6.0
-test_y_pred = m * test_x + c
-print(f"Prediction for X={test_x}: Y_pred = {test_y_pred:.4f}")
+# 5. Model Testing (Prediction Example)
+# Example input: [Feature 1, Feature 2, Feature 3]
+test_X = np.array([80, 85, 90])
+prediction = np.dot(test_X, weights) + bias
+print(f"\nPrediction for test input {test_X}: Y_pred = {prediction:.4f}")
