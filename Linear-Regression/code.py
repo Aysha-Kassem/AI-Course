@@ -18,7 +18,7 @@ N, num_features = X.shape # N: number of data points, num_features: 3
 
 # 2. Hyperparameters and Initialization
 # Lower learning rate is necessary due to the magnitude of the feature values
-learning_rate = 0.0001
+learning_rate = 0.0000001
 epochs = 500
 
 # Initialize weights (theta1, theta2, theta3) and bias (theta0) to zero
@@ -71,6 +71,6 @@ print(f"Final Weights (theta1, theta2, theta3) = {weights}")
 
 # 5. Model Testing (Prediction Example)
 # Example input: [Feature 1, Feature 2, Feature 3]
-test_X = np.array([80, 85, 90])
+test_X = np.array([79,80,73])
 prediction = np.dot(test_X, weights) + bias
 print(f"\nPrediction for test input {test_X}: Y_pred = {prediction:.4f}")
